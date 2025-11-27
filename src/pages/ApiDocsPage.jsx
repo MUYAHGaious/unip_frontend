@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { getMeta } from '../services/api';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
+import { Copy, Check } from 'lucide-react';
 
 const ApiDocsPage = () => {
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [copiedCode, setCopiedCode] = useState(null);
 
   useEffect(() => {
     const fetchMeta = async () => {
@@ -21,6 +23,37 @@ const ApiDocsPage = () => {
     };
     fetchMeta();
   }, []);
+
+  const copyToClipboard = async (code, id) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(id);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const CodeBlock = ({ code, id }) => (
+    <div className="relative group">
+      <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm text-gray-800 dark:text-gray-200 max-w-full scrollbar-thin">
+        {code}
+      </pre>
+      <button
+        onClick={() => copyToClipboard(code, id)}
+        className="absolute top-2 right-2 p-2 bg-white/90 dark:bg-gray-700/90 rounded
+                   hover:bg-white dark:hover:bg-gray-700 transition-all duration-200
+                   opacity-0 group-hover:opacity-100 focus:opacity-100"
+        title="Copy code"
+      >
+        {copiedCode === id ? (
+          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+        ) : (
+          <Copy className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+        )}
+      </button>
+    </div>
+  );
 
   if (loading) return <Loading message="Loading API documentation..." />;
   if (error) return <ErrorMessage message={error} />;
@@ -43,18 +76,20 @@ const ApiDocsPage = () => {
         <p className="text-gray-700 dark:text-gray-300 mb-4">Check the health status of the API service.</p>
 
         <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">Response:</h3>
-        <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm text-gray-800 dark:text-gray-200">
-{`{
+        <CodeBlock
+          id="health-response"
+          code={`{
   "status": "healthy",
   "timestamp": "2024-01-01T12:00:00.000000",
   "service": "UNIP API"
 }`}
-        </pre>
+        />
 
         <h3 className="font-semibold mb-2 mt-4 text-gray-900 dark:text-gray-100">Example:</h3>
-        <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm text-gray-800 dark:text-gray-200">
-{`curl ${apiBaseUrl}/api/v1/health`}
-        </pre>
+        <CodeBlock
+          id="health-curl"
+          code={`curl ${apiBaseUrl}/api/v1/health`}
+        />
       </div>
 
       {/* Meta Endpoint */}

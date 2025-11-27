@@ -7,13 +7,44 @@ import {
 import {
   TrendingUp, FileText, Sparkles, Activity,
   BarChart3, PieChart as PieChartIcon, Target, Zap, Copy, Check, Hash, CopyCheck, Clock, Server, Globe,
-  Lightbulb, AlertCircle, CheckCircle2, TrendingDown, Award, Users, Search, Eye, ThumbsUp
+  Lightbulb, AlertCircle, CheckCircle2, TrendingDown, Award, Users, Search, Eye, ThumbsUp, Menu, X
 } from 'lucide-react';
 
 const Dashboard = ({ analysisResults, timingData, fileNames }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [copiedKeyword, setCopiedKeyword] = useState(null);
   const [allCopied, setAllCopied] = useState(false);
+
+  // Helper to get responsive chart height based on screen size
+  const getChartHeight = () => {
+    if (typeof window === 'undefined') return 300;
+    const width = window.innerWidth;
+    if (width < 640) return 250; // Mobile
+    if (width < 1024) return 280; // Tablet
+    return 300; // Desktop
+  };
+
+  const [chartHeight, setChartHeight] = useState(getChartHeight());
+
+  // Update chart height on window resize
+  React.useEffect(() => {
+    const handleResize = () => {
+      setChartHeight(getChartHeight());
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Check if mobile for responsive features
+  const [isMobile, setIsMobile] = useState(false);
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Group results by source file
   const resultsByFile = {};
@@ -161,88 +192,195 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="flex">
+      <div className="flex relative">
+        {/* Mobile Sidebar Overlay */}
+        {hasMultipleDocuments && sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar - Document Selector */}
         {hasMultipleDocuments && (
-          <motion.aside
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 min-h-screen sticky top-0"
-          >
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <FileText className="h-6 w-6 text-teal-600 dark:text-teal-400" />
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Documents</h2>
-              </div>
-              
-              <div className="space-y-2">
-                <button
-                  onClick={() => setSelectedDocument('all')}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-between ${
-                    selectedDocument === 'all'
-                      ? 'bg-teal-500 text-white shadow-md'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <Activity className="h-4 w-4" />
-                    All Documents
-                  </span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    selectedDocument === 'all'
-                      ? 'bg-white/20 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
-                  }`}>
-                    {analysisResults.length}
-                  </span>
-                </button>
+          <>
+            {/* Desktop Sidebar */}
+            <motion.aside
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="hidden lg:block w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 min-h-screen sticky top-0"
+            >
+              <div className="p-4 sm:p-5 md:p-6">
+                <div className="flex items-center gap-2 mb-4 sm:mb-5 md:mb-6">
+                  <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600 dark:text-teal-400" />
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100">Documents</h2>
+                </div>
                 
-                {documentNames.map((docName) => (
+                <div className="space-y-2">
                   <button
-                    key={docName}
-                    onClick={() => setSelectedDocument(docName)}
-                    className={`w-full text-left px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-between ${
-                      selectedDocument === docName
+                    onClick={() => {
+                      setSelectedDocument('all');
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 flex items-center justify-between touch-manipulation min-h-[44px] ${
+                      selectedDocument === 'all'
                         ? 'bg-teal-500 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
-                    <span className="flex items-center gap-2 truncate">
-                      <FileText className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate" title={docName}>{docName}</span>
+                    <span className="flex items-center gap-1.5 sm:gap-2">
+                      <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      All Documents
                     </span>
-                    <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ml-2 ${
-                      selectedDocument === docName
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      selectedDocument === 'all'
                         ? 'bg-white/20 text-white'
                         : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
                     }`}>
-                      {resultsByFile[docName].length}
+                      {analysisResults.length}
                     </span>
                   </button>
-                ))}
+                  
+                  {documentNames.map((docName) => (
+                    <button
+                      key={docName}
+                      onClick={() => {
+                        setSelectedDocument(docName);
+                        setSidebarOpen(false);
+                      }}
+                      className={`w-full text-left px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200 flex items-center justify-between touch-manipulation min-h-[44px] ${
+                        selectedDocument === docName
+                          ? 'bg-teal-500 text-white shadow-md'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 sm:gap-2 truncate flex-1 min-w-0">
+                        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate" title={docName}>{docName}</span>
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ml-2 ${
+                        selectedDocument === docName
+                          ? 'bg-white/20 text-white'
+                          : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                      }`}>
+                        {resultsByFile[docName].length}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </motion.aside>
+            </motion.aside>
+
+            {/* Mobile Sidebar Drawer */}
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: sidebarOpen ? 0 : '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="lg:hidden fixed left-0 top-0 bottom-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 z-50 overflow-y-auto"
+            >
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Documents</h2>
+                  </div>
+                  <button
+                    onClick={() => setSidebarOpen(false)}
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  >
+                    <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  </button>
+                </div>
+                
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      setSelectedDocument('all');
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-between touch-manipulation min-h-[44px] ${
+                      selectedDocument === 'all'
+                        ? 'bg-teal-500 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Activity className="h-4 w-4" />
+                      All Documents
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      selectedDocument === 'all'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                    }`}>
+                      {analysisResults.length}
+                    </span>
+                  </button>
+                  
+                  {documentNames.map((docName) => (
+                    <button
+                      key={docName}
+                      onClick={() => {
+                        setSelectedDocument(docName);
+                        setSidebarOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-between touch-manipulation min-h-[44px] ${
+                        selectedDocument === docName
+                          ? 'bg-teal-500 text-white shadow-md'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 truncate flex-1 min-w-0">
+                        <FileText className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate" title={docName}>{docName}</span>
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ml-2 ${
+                        selectedDocument === docName
+                          ? 'bg-white/20 text-white'
+                          : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                      }`}>
+                        {resultsByFile[docName].length}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.aside>
+          </>
         )}
 
         {/* Main Content Area */}
-        <div className={`flex-1 ${hasMultipleDocuments ? '' : 'max-w-7xl mx-auto'} px-4 sm:px-6 lg:px-8 py-8`}>
+        <div className={`flex-1 ${hasMultipleDocuments ? '' : 'max-w-7xl mx-auto'} px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8`}>
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="mb-4 sm:mb-6 md:mb-8"
           >
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-3">
-              <Activity className="h-10 w-10 text-teal-600 dark:text-teal-400" />
-              Analytics
-              {hasMultipleDocuments && selectedDocument !== 'all' && (
-                <span className="text-xl font-normal text-gray-500 dark:text-gray-400">
-                  - {selectedDocument}
-                </span>
-              )}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                {hasMultipleDocuments && (
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
+                  >
+                    <Menu className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  </button>
+                )}
+                <Activity className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 flex flex-wrap items-center gap-2 sm:gap-3">
+                    <span>Analytics</span>
+                    {hasMultipleDocuments && selectedDocument !== 'all' && (
+                      <span className="text-base sm:text-lg md:text-xl font-normal text-gray-500 dark:text-gray-400 truncate">
+                        - {selectedDocument}
+                      </span>
+                    )}
+                  </h1>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 pl-0 lg:pl-0">
               {hasMultipleDocuments && selectedDocument !== 'all' 
                 ? `Viewing results for ${selectedDocument}`
                 : 'Real-time insights from your NLP analysis'
@@ -251,40 +389,40 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
           </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.name}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 md:p-6 hover:shadow-xl transition-shadow"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-xl ${stat.bgColor}`}>
-                  <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className={`p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl ${stat.bgColor}`}>
+                  <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${stat.iconColor}`} />
                 </div>
-                <span className="text-sm text-green-600 dark:text-green-400 font-medium">{stat.change}</span>
+                <span className="text-xs sm:text-sm text-green-600 dark:text-green-400 font-medium">{stat.change}</span>
               </div>
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{stat.value}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{stat.name}</p>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1 break-words">{stat.value}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{stat.name}</p>
             </motion.div>
           ))}
         </div>
 
         {/* Tabs */}
-        <div className="mb-6">
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="-mb-px flex space-x-8">
+        <div className="mb-4 sm:mb-5 md:mb-6">
+          <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-thin">
+            <nav className="-mb-px flex space-x-4 sm:space-x-6 md:space-x-8 min-w-max sm:min-w-0">
               {['overview', 'sentiment', 'keywords', 'topics', 'summary', 'performance', 'insights'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`
-                    py-4 px-1 border-b-2 font-medium text-sm transition-colors
+                    py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap touch-manipulation min-h-[44px]
                     ${activeTab === tab
-                      ? 'border-teal-500 text-teal-600'
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:border-gray-300'
+                      ? 'border-teal-500 text-teal-600 dark:text-teal-400'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
                     }
                   `}
                 >
@@ -297,26 +435,26 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
 
         {/* Charts Grid */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
             {/* Sentiment Distribution Pie Chart */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
+              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 md:p-6"
             >
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <PieChartIcon className="h-6 w-6 text-teal-600 dark:text-teal-400" />
-                Sentiment Distribution
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4 flex items-center gap-2">
+                <PieChartIcon className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+                <span>Sentiment Distribution</span>
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <PieChart>
                   <Pie
                     data={sentimentChartData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, percentage }) => `${name}: ${percentage}%`}
-                    outerRadius={100}
+                    labelLine={!isMobile}
+                    label={isMobile ? false : ({ name, percentage }) => `${name}: ${percentage}%`}
+                    outerRadius={isMobile ? 70 : 100}
                     fill="#8884d8"
                     dataKey="value"
                   >
@@ -333,17 +471,23 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
+              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 md:p-6"
             >
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <BarChart3 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
-                Top Keywords
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+                <span>Top Keywords</span>
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <BarChart data={topKeywords}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="keyword" angle={-45} textAnchor="end" height={80} />
-                  <YAxis />
+                  <XAxis 
+                    dataKey="keyword" 
+                    angle={isMobile ? -90 : -45} 
+                    textAnchor={isMobile ? "middle" : "end"} 
+                    height={isMobile ? 100 : 80}
+                    tick={{ fontSize: isMobile ? 10 : 12 }}
+                  />
+                  <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
                   <Tooltip />
                   <Bar dataKey="score" fill="#6366f1" radius={[8, 8, 0, 0]} />
                 </BarChart>
@@ -354,16 +498,16 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
+              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 md:p-6"
             >
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <Target className="h-6 w-6 text-teal-600 dark:text-teal-400" />
-                Performance Metrics
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4 flex items-center gap-2">
+                <Target className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+                <span>Performance Metrics</span>
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <RadarChart data={radarData}>
                   <PolarGrid />
-                  <PolarAngleAxis dataKey="metric" />
+                  <PolarAngleAxis dataKey="metric" tick={{ fontSize: isMobile ? 10 : 12 }} />
                   <PolarRadiusAxis angle={90} domain={[0, 100]} />
                   <Radar name="Performance" dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.6} />
                   <Tooltip />
@@ -375,13 +519,13 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
+              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 md:p-6"
             >
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <TrendingUp className="h-6 w-6 text-teal-600" />
-                Confidence Trend
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+                <span>Confidence Trend</span>
               </h3>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={chartHeight}>
                 <LineChart
                   data={filteredResults.map((r, i) => ({
                     index: i + 1,
@@ -389,10 +533,17 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
                   }))}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="index" label={{ value: 'Text #', position: 'insideBottom', offset: -5 }} />
-                  <YAxis label={{ value: 'Confidence %', angle: -90, position: 'insideLeft' }} />
+                  <XAxis 
+                    dataKey="index" 
+                    label={{ value: 'Text #', position: 'insideBottom', offset: -5 }}
+                    tick={{ fontSize: isMobile ? 10 : 12 }}
+                  />
+                  <YAxis 
+                    label={{ value: 'Confidence %', angle: -90, position: 'insideLeft' }}
+                    tick={{ fontSize: isMobile ? 10 : 12 }}
+                  />
                   <Tooltip />
-                  <Line type="monotone" dataKey="confidence" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="confidence" stroke="#10b981" strokeWidth={2} dot={{ r: isMobile ? 3 : 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </motion.div>
@@ -467,12 +618,12 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
+            className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 md:p-6"
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Keyword Analysis</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Click on any keyword to copy it</p>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">Keyword Analysis</h3>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">Click on any keyword to copy it</p>
               </div>
               {allKeywords.length > 0 && (
                 <button
@@ -486,7 +637,7 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
                       console.error('Failed to copy all keywords:', err);
                     }
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 touch-manipulation min-h-[44px] w-full sm:w-auto ${
                     allCopied
                       ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                       : 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-900/50'
@@ -506,7 +657,7 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               {allKeywords.map((kw, index) => {
                 const isCopied = copiedKeyword === kw.keyword;
                 return (
@@ -524,24 +675,24 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
                         console.error('Failed to copy:', err);
                       }
                     }}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 ${
+                    className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-all duration-200 touch-manipulation min-h-[44px] ${
                       isCopied
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                        : 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-900/50'
-                    } cursor-pointer active:scale-95`}
+                        : 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-900/50 active:scale-95'
+                    } cursor-pointer`}
                   style={{
-                    fontSize: `${0.875 + kw.score * 0.5}rem`
+                    fontSize: `clamp(0.75rem, ${0.75 + kw.score * 0.3}rem, 1rem)`
                   }}
                     title={`Click to copy: ${kw.keyword}`}
                 >
-                  {kw.keyword}
-                    <span className="text-xs opacity-70">
+                  <span className="truncate max-w-[120px] sm:max-w-none">{kw.keyword}</span>
+                    <span className="text-xs opacity-70 flex-shrink-0">
                     {(kw.score * 100).toFixed(0)}%
                   </span>
                     {isCopied ? (
-                      <Check className="h-3.5 w-3.5" />
+                      <Check className="h-3.5 w-3.5 flex-shrink-0" />
                     ) : (
-                      <Copy className="h-3.5 w-3.5 opacity-60" />
+                      <Copy className="h-3.5 w-3.5 opacity-60 flex-shrink-0" />
                     )}
                   </motion.button>
                 );
@@ -850,7 +1001,7 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
                       <BarChart3 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
                       Request Duration Comparison
                     </h3>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={chartHeight}>
                       <BarChart data={timingData.backend.colab_requests.map((req, idx) => ({
                         name: req.task?.charAt(0).toUpperCase() + req.task?.slice(1) || `Request ${idx + 1}`,
                         duration: req.request_duration,

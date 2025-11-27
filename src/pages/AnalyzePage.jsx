@@ -418,9 +418,9 @@ const AnalyzePage = () => {
       // fileArray is already declared at the top of the function
       const fileNames = fileArray.map(f => f.name);
       
-      const newResult = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
+    const newResult = {
+      id: Date.now(),
+      timestamp: new Date().toISOString(),
         results: response.results,
         textCount: response.results.length,
         fileCount: fileArray.length,
@@ -435,9 +435,9 @@ const AnalyzePage = () => {
           backend: response.processing_info?.timing || null,
           ...(response.frontend_timing ? { frontend_timing: response.frontend_timing } : {})
         }
-      };
+    };
 
-      setCurrentResults(newResult);
+    setCurrentResults(newResult);
 
       // Add to history
       addToHistory(newResult);
@@ -451,10 +451,10 @@ const AnalyzePage = () => {
         totalTasks: tasks.length
       });
 
-      // Auto-scroll to results
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 300);
+    // Auto-scroll to results
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
 
     } catch (err) {
       // Clear any progress intervals on error
@@ -485,17 +485,17 @@ const AnalyzePage = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Text Analysis</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100">Text Analysis</h1>
         {currentResults && (
           <button
             onClick={clearCurrentResults}
-            className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400
+            className="px-4 py-2 text-sm sm:text-base text-gray-600 dark:text-gray-400
                      hover:text-gray-900 dark:hover:text-gray-200
                      hover:bg-gray-100 dark:hover:bg-gray-700
-                     rounded-lg transition-colors"
+                     rounded-lg transition-colors touch-manipulation min-h-[44px] w-full sm:w-auto"
           >
             Clear Results
           </button>
@@ -503,15 +503,17 @@ const AnalyzePage = () => {
       </div>
 
       {error && (
+        <div className="mb-4 sm:mb-6">
         <ErrorMessage
           message={error}
           onDismiss={() => setError('')}
         />
+        </div>
       )}
 
       {/* Status Message */}
       {statusMessage && (
-        <div className="max-w-4xl mx-auto mb-6">
+        <div className="max-w-4xl mx-auto mb-4 sm:mb-5 md:mb-6">
           <StatusMessage
             type={statusMessage.type}
             message={statusMessage.message}
@@ -522,15 +524,15 @@ const AnalyzePage = () => {
       )}
 
       {/* Input Section */}
-      <div className="max-w-4xl mx-auto space-y-6 mb-8">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5 md:space-y-6 mb-6 sm:mb-7 md:mb-8">
         <TextInput onAnalyze={handleAnalyze} disabled={loading} />
-        <div className="text-center text-gray-500 dark:text-gray-400">OR</div>
+        <div className="text-center text-sm sm:text-base text-gray-500 dark:text-gray-400">OR</div>
         <FileUpload onAnalyze={handleFileAnalyze} disabled={loading} />
       </div>
 
       {/* Loading with Progress */}
       {loading && progress && (
-        <div ref={loadingRef} className="max-w-2xl mx-auto mb-8">
+        <div ref={loadingRef} className="max-w-2xl mx-auto mb-6 sm:mb-7 md:mb-8">
           <Loading 
             message={progress.stage} 
             subMessage={progress.subMessage || null}
@@ -538,17 +540,17 @@ const AnalyzePage = () => {
             completedTasks={progress.completedTasks || []}
             totalTasks={progress.totalTasks || 0}
           />
-          <div className="mt-6 space-y-2">
-            <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden shadow-inner">
-              <div
-                className="bg-gradient-to-r from-teal-500 to-teal-600 dark:from-teal-600 dark:to-teal-500 h-3 rounded-full transition-all duration-500 ease-out relative"
-                style={{ width: `${progress.percent}%` }}
+          <div className="mt-4 sm:mt-5 md:mt-6 space-y-2">
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 sm:h-3 overflow-hidden shadow-inner">
+            <div
+                className="bg-gradient-to-r from-teal-500 to-teal-600 dark:from-teal-600 dark:to-teal-500 h-2.5 sm:h-3 rounded-full transition-all duration-500 ease-out relative"
+              style={{ width: `${progress.percent}%` }}
               >
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>
             </div>
-            <div className="flex justify-between items-center">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{progress.percent}%</p>
+            <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-1 xs:gap-0">
+              <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">{progress.percent}%</p>
               {progress.totalTasks > 0 && (
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {progress.completedTasks.length} / {progress.totalTasks} tasks completed
@@ -561,14 +563,14 @@ const AnalyzePage = () => {
 
       {/* Current Results */}
       {currentResults && !loading && (
-        <div ref={resultsRef} className="space-y-8 fade-in-up">
+        <div ref={resultsRef} className="space-y-6 sm:space-y-7 md:space-y-8 fade-in-up">
           {/* Dashboard */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
                 Analytics Overview
               </h2>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {new Date(currentResults.timestamp).toLocaleString()}
               </span>
             </div>
@@ -583,12 +585,12 @@ const AnalyzePage = () => {
 
       {/* Empty State */}
       {!currentResults && !loading && (
-        <div className="text-center py-16 fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16
-                        bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
-            <History className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+        <div className="text-center py-12 sm:py-14 md:py-16 fade-in">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16
+                        bg-gray-100 dark:bg-gray-800 rounded-full mb-3 sm:mb-4">
+            <History className="h-7 w-7 sm:h-8 sm:w-8 text-gray-400 dark:text-gray-500" />
           </div>
-          <p className="text-lg text-gray-500 dark:text-gray-400">
+          <p className="text-base sm:text-lg text-gray-500 dark:text-gray-400 px-4">
             No analysis yet. Upload a file or enter text to get started!
           </p>
         </div>
