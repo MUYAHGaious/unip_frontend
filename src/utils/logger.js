@@ -12,26 +12,40 @@ const LOG_LEVELS = {
 
 class Logger {
   constructor() {
-    this.apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
-    this.level = import.meta.env.DEV ? LOG_LEVELS.DEBUG : LOG_LEVELS.WARN;
-    this.logBatch = [];
-    this.batchSize = 50;
-    this.flushInterval = 5000; // 5 seconds
-    this.correlationId = this.generateCorrelationId();
+    try {
+      this.apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+      this.level = import.meta.env.DEV ? LOG_LEVELS.DEBUG : LOG_LEVELS.WARN;
+      this.logBatch = [];
+      this.batchSize = 50;
+      this.flushInterval = 5000; // 5 seconds
+      this.correlationId = this.generateCorrelationId();
 
-    // Preserve original console methods
-    this.originalConsole = {
-      log: console.log.bind(console),
-      info: console.info.bind(console),
-      warn: console.warn.bind(console),
-      error: console.error.bind(console),
-      debug: console.debug.bind(console),
-    };
+      // Preserve original console methods
+      this.originalConsole = {
+        log: console.log.bind(console),
+        info: console.info.bind(console),
+        warn: console.warn.bind(console),
+        error: console.error.bind(console),
+        debug: console.debug.bind(console),
+      };
 
-    // Initialize
-    this.interceptConsole();
-    this.startBatchFlushing();
-    this.setupErrorHandlers();
+      // Initialize only if window is available
+      if (typeof window !== 'undefined') {
+        this.interceptConsole();
+        this.startBatchFlushing();
+        this.setupErrorHandlers();
+      }
+    } catch (error) {
+      // Fallback to basic console if logger fails
+      console.error('Logger initialization failed:', error);
+      this.originalConsole = {
+        log: console.log.bind(console),
+        info: console.info.bind(console),
+        warn: console.warn.bind(console),
+        error: console.error.bind(console),
+        debug: console.debug.bind(console),
+      };
+    }
   }
 
   generateCorrelationId() {

@@ -349,30 +349,31 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
           </>
         )}
 
-        {/* Main Content Area */}
-        <div className={`flex-1 ${hasMultipleDocuments ? '' : 'max-w-7xl mx-auto'} px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8`}>
-          {/* Header */}
+        {/* Main Content Area - Mobile First */}
+        <div className={`flex-1 w-full ${hasMultipleDocuments ? '' : 'max-w-7xl mx-auto'} px-0 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8`}>
+          {/* Header - Mobile Optimized */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 sm:mb-6 md:mb-8"
+            className="mb-3 sm:mb-4 md:mb-6"
           >
-            <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2">
               <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 {hasMultipleDocuments && (
                   <button
                     onClick={() => setSidebarOpen(true)}
                     className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
+                    aria-label="Open document selector"
                   >
                     <Menu className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                   </button>
                 )}
-                <Activity className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+                <Activity className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-teal-600 dark:text-teal-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 flex flex-wrap items-center gap-2 sm:gap-3">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 flex flex-wrap items-center gap-1 sm:gap-2">
                     <span>Analytics</span>
                     {hasMultipleDocuments && selectedDocument !== 'all' && (
-                      <span className="text-base sm:text-lg md:text-xl font-normal text-gray-500 dark:text-gray-400 truncate">
+                      <span className="text-sm sm:text-base md:text-lg font-normal text-gray-500 dark:text-gray-400 truncate">
                         - {selectedDocument}
                       </span>
                     )}
@@ -380,7 +381,7 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
                 </div>
               </div>
             </div>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 pl-0 lg:pl-0">
+            <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-400">
               {hasMultipleDocuments && selectedDocument !== 'all' 
                 ? `Viewing results for ${selectedDocument}`
                 : 'Real-time insights from your NLP analysis'
@@ -388,40 +389,40 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
             </p>
           </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
+        {/* Stats Grid - Mobile First */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4 md:mb-6">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.name}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 md:p-6 hover:shadow-xl transition-shadow"
+              className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-shadow p-3 sm:p-4 md:p-5"
             >
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <div className={`p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl ${stat.bgColor}`}>
-                  <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${stat.iconColor}`} />
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div className={`p-1.5 sm:p-2 md:p-2.5 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 ${stat.iconColor}`} />
                 </div>
-                <span className="text-xs sm:text-sm text-green-600 dark:text-green-400 font-medium">{stat.change}</span>
+                <span className="text-[10px] sm:text-xs text-green-600 dark:text-green-400 font-medium truncate ml-1">{stat.change}</span>
               </div>
-              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1 break-words">{stat.value}</h3>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{stat.name}</p>
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-0.5 sm:mb-1 break-words line-clamp-2">{stat.value}</h3>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-gray-400 line-clamp-1">{stat.name}</p>
             </motion.div>
           ))}
         </div>
 
-        {/* Tabs */}
-        <div className="mb-4 sm:mb-5 md:mb-6">
-          <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-thin">
-            <nav className="-mb-px flex space-x-4 sm:space-x-6 md:space-x-8 min-w-max sm:min-w-0">
+        {/* Tabs - Mobile Scrollable */}
+        <div className="mb-3 sm:mb-4 md:mb-6">
+          <div className="border-b border-gray-200 dark:border-gray-700 overflow-x-auto scrollbar-hide -mx-0 sm:mx-0 px-0 sm:px-0">
+            <nav className="-mb-px flex space-x-2 sm:space-x-4 md:space-x-6 min-w-max">
               {['overview', 'sentiment', 'keywords', 'topics', 'summary', 'performance', 'insights'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`
-                    py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap touch-manipulation min-h-[44px]
+                    py-2.5 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap touch-manipulation min-h-[44px] flex-shrink-0
                     ${activeTab === tab
-                      ? 'border-teal-500 text-teal-600 dark:text-teal-400'
+                      ? 'border-teal-500 text-teal-600 dark:text-teal-400 font-semibold'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
                     }
                   `}
@@ -433,17 +434,17 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
           </div>
         </div>
 
-        {/* Charts Grid */}
+        {/* Charts Grid - Mobile First */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
             {/* Sentiment Distribution Pie Chart */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 md:p-6"
+              className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md p-3 sm:p-4 md:p-5 lg:p-6"
             >
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4 flex items-center gap-2">
-                <PieChartIcon className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 md:mb-4 flex items-center gap-2">
+                <PieChartIcon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
                 <span>Sentiment Distribution</span>
               </h3>
               <ResponsiveContainer width="100%" height={chartHeight}>
@@ -454,7 +455,7 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
                     cy="50%"
                     labelLine={!isMobile}
                     label={isMobile ? false : ({ name, percentage }) => `${name}: ${percentage}%`}
-                    outerRadius={isMobile ? 70 : 100}
+                    outerRadius={isMobile ? 60 : window.innerWidth < 768 ? 70 : 100}
                     fill="#8884d8"
                     dataKey="value"
                   >
@@ -462,7 +463,13 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
                       <Cell key={`cell-${index}`} fill={COLORS[entry.name]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    contentStyle={{ 
+                      fontSize: isMobile ? '12px' : '14px',
+                      padding: isMobile ? '8px' : '12px',
+                      borderRadius: '8px'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </motion.div>
@@ -471,25 +478,32 @@ const Dashboard = ({ analysisResults, timingData, fileNames }) => {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 md:p-6"
+              className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-md p-3 sm:p-4 md:p-5 lg:p-6"
             >
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4 flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 md:mb-4 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-teal-600 dark:text-teal-400 flex-shrink-0" />
                 <span>Top Keywords</span>
               </h3>
               <ResponsiveContainer width="100%" height={chartHeight}>
-                <BarChart data={topKeywords}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                <BarChart data={topKeywords} margin={isMobile ? { top: 5, right: 5, left: 0, bottom: 60 } : { top: 10, right: 10, left: 0, bottom: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis 
                     dataKey="keyword" 
                     angle={isMobile ? -90 : -45} 
                     textAnchor={isMobile ? "middle" : "end"} 
-                    height={isMobile ? 100 : 80}
-                    tick={{ fontSize: isMobile ? 10 : 12 }}
+                    height={isMobile ? 80 : 60}
+                    tick={{ fontSize: isMobile ? 9 : 11 }}
+                    interval={0}
                   />
-                  <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="score" fill="#6366f1" radius={[8, 8, 0, 0]} />
+                  <YAxis tick={{ fontSize: isMobile ? 9 : 11 }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      fontSize: isMobile ? '12px' : '14px',
+                      padding: isMobile ? '8px' : '12px',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar dataKey="score" fill="#6366f1" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </motion.div>

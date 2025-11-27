@@ -12,21 +12,35 @@ export const useHistory = () => {
 
 export const HistoryProvider = ({ children }) => {
   const [history, setHistory] = useState(() => {
-    // Load from localStorage on initialization
-    const saved = localStorage.getItem('analysisHistory');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return [];
+    try {
+      // Load from localStorage on initialization
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = localStorage.getItem('analysisHistory');
+        if (saved) {
+          try {
+            return JSON.parse(saved);
+          } catch (e) {
+            console.error('Error parsing history from localStorage:', e);
+            return [];
+          }
+        }
       }
+      return [];
+    } catch (error) {
+      console.error('Error initializing history:', error);
+      return [];
     }
-    return [];
   });
 
   // Save to localStorage whenever history changes
   useEffect(() => {
-    localStorage.setItem('analysisHistory', JSON.stringify(history));
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('analysisHistory', JSON.stringify(history));
+      }
+    } catch (error) {
+      console.error('Error saving history to localStorage:', error);
+    }
   }, [history]);
 
   const addToHistory = (result) => {
