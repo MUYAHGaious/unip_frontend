@@ -24,6 +24,8 @@ export const FILE_TYPES = {
   TXT: '.txt',
   CSV: '.csv',
   PDF: '.pdf',
+  MD: '.md',
+  SRT: '.srt',
 };
 
 // Security limits

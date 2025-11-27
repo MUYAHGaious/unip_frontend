@@ -1,47 +1,222 @@
-import { useState, useRef } from 'react';
-import { analyzeTexts } from '../services/api';
+import { useState, useRef, useEffect } from 'react';
+import { analyzeTexts, analyzeFile } from '../services/api';
 import TextInput from '../components/analysis/TextInput';
 import FileUpload from '../components/analysis/FileUpload';
-import ResultsDisplay from '../components/analysis/ResultsDisplay';
 import Dashboard from '../components/dashboard/Dashboard';
 import Loading from '../components/common/Loading';
 import ErrorMessage from '../components/common/ErrorMessage';
-import { History, X, Clock } from 'lucide-react';
+import StatusMessage from '../components/common/StatusMessage';
+import { useHistory } from '../context/HistoryContext';
+import { History } from 'lucide-react';
 
 const AnalyzePage = () => {
-  const [currentResults, setCurrentResults] = useState(null);
-  const [resultsHistory, setResultsHistory] = useState([]);
+  // Load current results from localStorage on mount
+  const [currentResults, setCurrentResults] = useState(() => {
+    const saved = localStorage.getItem('currentAnalysisResult');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+  const { addToHistory } = useHistory();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(null);
-  const [showHistory, setShowHistory] = useState(false);
+  const [progressInterval, setProgressInterval] = useState(null);
+  const [statusMessage, setStatusMessage] = useState(null);
+  const [processingInfo, setProcessingInfo] = useState(null);
   const resultsRef = useRef(null);
+  const loadingRef = useRef(null);
+
+  // Persist current results to localStorage whenever they change
+  useEffect(() => {
+    if (currentResults) {
+      localStorage.setItem('currentAnalysisResult', JSON.stringify(currentResults));
+    } else {
+      localStorage.removeItem('currentAnalysisResult');
+    }
+  }, [currentResults]);
 
   const handleAnalyze = async (texts) => {
     setLoading(true);
     setError('');
-    setProgress({ stage: 'Initializing', percent: 10 });
+    setStatusMessage(null);
+    setProcessingInfo(null);
+    
+    const textCount = texts.length;
+    const tasks = ['sentiment', 'keywords', 'topics', 'summary'];
+    let completedTasks = [];
+    let currentTaskIndex = 0;
+    
+    // Initialize progress
+    setProgress({ 
+      stage: 'Initializing analysis...', 
+      percent: 5,
+      subMessage: `Preparing to analyze ${textCount} text${textCount > 1 ? 's' : ''}`,
+      currentTask: null,
+      completedTasks: [],
+      totalTasks: tasks.length
+    });
+
+    // Auto-scroll to loading section
+    setTimeout(() => {
+      loadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 
     try {
-      setProgress({ stage: 'Sending to NLP engine', percent: 30 });
+      // Stage 1: Connection
+      setProgress({ 
+        stage: 'Connecting to NLP engine...', 
+        percent: 10,
+        subMessage: 'Establishing connection to backend service',
+        currentTask: null,
+        completedTasks: [],
+        totalTasks: tasks.length
+      });
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Stage 2: Health check
+      setProgress({ 
+        stage: 'Checking GPU service availability...', 
+        percent: 15,
+        subMessage: 'Verifying Colab GPU service status',
+        currentTask: null,
+        completedTasks: [],
+        totalTasks: tasks.length
+      });
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Stage 3: Sending request
+      setProgress({ 
+        stage: 'Sending data to NLP engine', 
+        percent: 20,
+        subMessage: `Uploading ${textCount} text${textCount > 1 ? 's' : ''} for processing`,
+        currentTask: null,
+        completedTasks: [],
+        totalTasks: tasks.length
+      });
+      
+      const requestStartTime = Date.now();
+      
+      // Simulate progress updates during processing
+      const progressSimulator = setInterval(() => {
+        currentTaskIndex++;
+        if (currentTaskIndex < tasks.length) {
+          const task = tasks[currentTaskIndex];
+          const taskNames = {
+            sentiment: 'Analyzing Sentiment',
+            keywords: 'Extracting Keywords',
+            topics: 'Modeling Topics',
+            summary: 'Generating Summaries'
+          };
+          
+          completedTasks = tasks.slice(0, currentTaskIndex).map(t => taskNames[t]);
+          const currentTask = taskNames[task];
+          
+          const basePercent = 25;
+          const taskPercent = (currentTaskIndex / tasks.length) * 50; // 25-75% for tasks
+          const textProgress = (1 / textCount) * 20; // Remaining 20% for texts
+          
+          setProgress({ 
+            stage: currentTask,
+            percent: Math.min(95, basePercent + taskPercent),
+            subMessage: `Processing ${textCount} text${textCount > 1 ? 's' : ''}...`,
+            currentTask: currentTask,
+            completedTasks: completedTasks,
+            totalTasks: tasks.length
+          });
+        }
+      }, 2000); // Update every 2 seconds
+      
+      setProgressInterval(progressSimulator);
+      
       const response = await analyzeTexts(texts);
+      const requestEndTime = Date.now();
+      
+      // Clear progress simulator
+      if (progressSimulator) {
+        clearInterval(progressSimulator);
+        setProgressInterval(null);
+      }
+      
+      // Mark all tasks as completed
+      completedTasks = tasks.map(t => {
+        const taskNames = {
+          sentiment: 'Analyzing Sentiment',
+          keywords: 'Extracting Keywords',
+          topics: 'Modeling Topics',
+          summary: 'Generating Summaries'
+        };
+        return taskNames[t];
+      });
+      
+      setProgress({ 
+        stage: 'Processing completed', 
+        percent: 95,
+        subMessage: 'Finalizing results...',
+        currentTask: null,
+        completedTasks: completedTasks,
+        totalTasks: tasks.length
+      });
 
-      setProgress({ stage: 'Processing results', percent: 70 });
+      // Handle processing info
+      if (response.processing_info) {
+        setProcessingInfo(response.processing_info);
+        
+        // Show status messages based on processing mode
+        if (response.processing_info.mode === 'colab') {
+          setStatusMessage({
+            type: 'success',
+            message: '✓ Using GPU-accelerated processing (Colab) for faster and more accurate results'
+          });
+        } else if (response.processing_info.colab_failed) {
+          setStatusMessage({
+            type: 'warning',
+            message: `⚠ ${response.processing_info.warnings?.[0] || 'Using local processing'}`
+          });
+        } else {
+          setStatusMessage({
+            type: 'info',
+            message: 'ℹ Processing with local models'
+          });
+        }
+      }
 
-      // Set as current results
+      // Set as current results with timing info
       const newResult = {
         id: Date.now(),
         timestamp: new Date().toISOString(),
         results: response.results,
-        textCount: texts.length
+        textCount: texts.length,
+        processingInfo: response.processing_info,
+        timing: {
+          frontend: {
+            request_start: requestStartTime,
+            request_end: requestEndTime,
+            total_duration: ((requestEndTime - requestEndTime) / 1000).toFixed(3)
+          },
+          backend: response.processing_info?.timing || null,
+          ...(response.frontend_timing ? { frontend_timing: response.frontend_timing } : {})
+        }
       };
 
       setCurrentResults(newResult);
 
       // Add to history
-      setResultsHistory(prev => [...prev, newResult]);
+      addToHistory(newResult);
 
-      setProgress({ stage: 'Complete!', percent: 100 });
+      setProgress({ 
+        stage: 'Analysis Complete!', 
+        percent: 100,
+        subMessage: `Successfully analyzed ${textCount} text${textCount > 1 ? 's' : ''}`,
+        currentTask: null,
+        completedTasks: completedTasks,
+        totalTasks: tasks.length
+      });
 
       // Auto-scroll to results
       setTimeout(() => {
@@ -49,44 +224,264 @@ const AnalyzePage = () => {
       }, 300);
 
     } catch (err) {
+      // Clear any progress intervals on error
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        setProgressInterval(null);
+      }
       setError(err.message || 'Failed to analyze text');
+      setStatusMessage({
+        type: 'error',
+        message: `Error: ${err.message || 'Analysis failed. Please try again.'}`
+      });
     } finally {
+      // Clear any progress intervals
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        setProgressInterval(null);
+      }
       setTimeout(() => {
         setLoading(false);
         setProgress(null);
-      }, 500);
+      }, 1000);
     }
   };
 
-  const handleFileResults = (fileResults) => {
-    const newResult = {
-      id: Date.now(),
-      timestamp: new Date().toISOString(),
-      results: fileResults,
-      textCount: fileResults.length
-    };
-
-    setCurrentResults(newResult);
-    setResultsHistory(prev => [...prev, newResult]);
+  const handleFileAnalyze = async (files) => {
+    setLoading(true);
     setError('');
+    setStatusMessage(null);
+    setProcessingInfo(null);
+    
+    // Handle single file or multiple files
+    const fileArray = Array.isArray(files) ? files : [files];
+    const tasks = ['sentiment', 'keywords', 'topics', 'summary'];
+    let completedTasks = [];
+    let currentTaskIndex = 0;
+    
+    // Initialize progress
+    setProgress({ 
+      stage: 'Initializing file analysis...', 
+      percent: 5,
+      subMessage: `Preparing to analyze ${fileArray.length} file${fileArray.length > 1 ? 's' : ''}`,
+      currentTask: null,
+      completedTasks: [],
+      totalTasks: tasks.length
+    });
 
-    // Auto-scroll to results
+    // Auto-scroll to loading section
     setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
-  };
-
-  const clearHistory = () => {
-    setResultsHistory([]);
-    setShowHistory(false);
-  };
-
-  const viewHistoryItem = (item) => {
-    setCurrentResults(item);
-    setShowHistory(false);
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      loadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
+
+    try {
+      // Stage 1: File validation
+      setProgress({ 
+        stage: 'Validating files...', 
+        percent: 10,
+        subMessage: `Checking ${fileArray.length} file${fileArray.length > 1 ? 's' : ''} format and size`,
+        currentTask: null,
+        completedTasks: [],
+        totalTasks: tasks.length
+      });
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Stage 2: File parsing
+      setProgress({ 
+        stage: 'Parsing files...', 
+        percent: 15,
+        subMessage: `Extracting text from ${fileArray.length} file${fileArray.length > 1 ? 's' : ''}`,
+        currentTask: null,
+        completedTasks: [],
+        totalTasks: tasks.length
+      });
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // Stage 3: Connection
+      setProgress({ 
+        stage: 'Connecting to NLP engine...', 
+        percent: 20,
+        subMessage: 'Establishing connection to backend service',
+        currentTask: null,
+        completedTasks: [],
+        totalTasks: tasks.length
+      });
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Stage 4: Health check
+      setProgress({ 
+        stage: 'Checking GPU service availability...', 
+        percent: 25,
+        subMessage: 'Verifying Colab GPU service status',
+        currentTask: null,
+        completedTasks: [],
+        totalTasks: tasks.length
+      });
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Stage 5: Sending request
+      setProgress({ 
+        stage: 'Sending data to NLP engine', 
+        percent: 30,
+        subMessage: `Uploading content from ${fileArray.length} file${fileArray.length > 1 ? 's' : ''}`,
+        currentTask: null,
+        completedTasks: [],
+        totalTasks: tasks.length
+      });
+      
+      const requestStartTime = Date.now();
+      
+      // Simulate progress updates during processing
+      const progressSimulator = setInterval(() => {
+        currentTaskIndex++;
+        if (currentTaskIndex < tasks.length) {
+          const task = tasks[currentTaskIndex];
+          const taskNames = {
+            sentiment: 'Analyzing Sentiment',
+            keywords: 'Extracting Keywords',
+            topics: 'Modeling Topics',
+            summary: 'Generating Summaries'
+          };
+          
+          completedTasks = tasks.slice(0, currentTaskIndex).map(t => taskNames[t]);
+          const currentTask = taskNames[task];
+          
+          const basePercent = 35;
+          const taskPercent = (currentTaskIndex / tasks.length) * 50; // 35-85% for tasks
+          
+          setProgress({ 
+            stage: currentTask,
+            percent: Math.min(95, basePercent + taskPercent),
+            subMessage: `Processing content from ${fileArray.length} file${fileArray.length > 1 ? 's' : ''}...`,
+            currentTask: currentTask,
+            completedTasks: completedTasks,
+            totalTasks: tasks.length
+          });
+        }
+      }, 2000); // Update every 2 seconds
+      
+      setProgressInterval(progressSimulator);
+      
+      const response = await analyzeFile(fileArray);
+      const requestEndTime = Date.now();
+      
+      // Clear progress simulator
+      if (progressSimulator) {
+        clearInterval(progressSimulator);
+        setProgressInterval(null);
+      }
+      
+      // Mark all tasks as completed
+      completedTasks = tasks.map(t => {
+        const taskNames = {
+          sentiment: 'Analyzing Sentiment',
+          keywords: 'Extracting Keywords',
+          topics: 'Modeling Topics',
+          summary: 'Generating Summaries'
+        };
+        return taskNames[t];
+      });
+      
+      setProgress({ 
+        stage: 'Processing completed', 
+        percent: 95,
+        subMessage: 'Finalizing results...',
+        currentTask: null,
+        completedTasks: completedTasks,
+        totalTasks: tasks.length
+      });
+
+      // Handle processing info
+      if (response.processing_info) {
+        setProcessingInfo(response.processing_info);
+        
+        // Show status messages based on processing mode
+        if (response.processing_info.mode === 'colab') {
+          setStatusMessage({
+            type: 'success',
+            message: '✓ Using GPU-accelerated processing (Colab) for faster and more accurate results'
+          });
+        } else if (response.processing_info.colab_failed) {
+          setStatusMessage({
+            type: 'warning',
+            message: `⚠ ${response.processing_info.warnings?.[0] || 'Using local processing'}`
+          });
+        } else {
+          setStatusMessage({
+            type: 'info',
+            message: 'ℹ Processing with local models'
+          });
+        }
+      }
+
+      // Set as current results with timing info
+      // fileArray is already declared at the top of the function
+      const fileNames = fileArray.map(f => f.name);
+      
+      const newResult = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        results: response.results,
+        textCount: response.results.length,
+        fileCount: fileArray.length,
+        fileNames: fileNames,
+        processingInfo: response.processing_info,
+        timing: {
+          frontend: {
+            request_start: requestStartTime,
+            request_end: requestEndTime,
+            total_duration: ((requestEndTime - requestStartTime) / 1000).toFixed(3)
+          },
+          backend: response.processing_info?.timing || null,
+          ...(response.frontend_timing ? { frontend_timing: response.frontend_timing } : {})
+        }
+      };
+
+      setCurrentResults(newResult);
+
+      // Add to history
+      addToHistory(newResult);
+
+      setProgress({ 
+        stage: 'Analysis Complete!', 
+        percent: 100,
+        subMessage: `Successfully analyzed ${fileArray.length} file${fileArray.length > 1 ? 's' : ''} with ${response.results.length} text${response.results.length > 1 ? 's' : ''}`,
+        currentTask: null,
+        completedTasks: completedTasks,
+        totalTasks: tasks.length
+      });
+
+      // Auto-scroll to results
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+
+    } catch (err) {
+      // Clear any progress intervals on error
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        setProgressInterval(null);
+      }
+      setError(err.message || 'Failed to analyze file');
+      setStatusMessage({
+        type: 'error',
+        message: `Error: ${err.message || 'File analysis failed. Please try again.'}`
+      });
+    } finally {
+      // Clear any progress intervals
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        setProgressInterval(null);
+      }
+      setTimeout(() => {
+        setLoading(false);
+        setProgress(null);
+      }, 1000);
+    }
+  };
+
+  const clearCurrentResults = () => {
+    setCurrentResults(null);
   };
 
   return (
@@ -94,17 +489,15 @@ const AnalyzePage = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Text Analysis</h1>
-        {resultsHistory.length > 0 && (
+        {currentResults && (
           <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-2 px-4 py-2
-                     bg-teal-100 dark:bg-teal-900/30
-                     text-teal-700 dark:text-teal-300
-                     rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/50
-                     transition-all duration-200"
+            onClick={clearCurrentResults}
+            className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400
+                     hover:text-gray-900 dark:hover:text-gray-200
+                     hover:bg-gray-100 dark:hover:bg-gray-700
+                     rounded-lg transition-colors"
           >
-            <History className="h-4 w-4" />
-            History ({resultsHistory.length})
+            Clear Results
           </button>
         )}
       </div>
@@ -116,95 +509,50 @@ const AnalyzePage = () => {
         />
       )}
 
+      {/* Status Message */}
+      {statusMessage && (
+        <div className="max-w-4xl mx-auto mb-6">
+          <StatusMessage
+            type={statusMessage.type}
+            message={statusMessage.message}
+            onDismiss={() => setStatusMessage(null)}
+            persistent={statusMessage.type === 'error'}
+          />
+        </div>
+      )}
+
       {/* Input Section */}
       <div className="max-w-4xl mx-auto space-y-6 mb-8">
         <TextInput onAnalyze={handleAnalyze} disabled={loading} />
         <div className="text-center text-gray-500 dark:text-gray-400">OR</div>
-        <FileUpload onAnalyze={handleFileResults} disabled={loading} />
+        <FileUpload onAnalyze={handleFileAnalyze} disabled={loading} />
       </div>
 
       {/* Loading with Progress */}
       {loading && progress && (
-        <div className="max-w-2xl mx-auto mb-8">
-          <Loading message={progress.stage} />
-          <div className="mt-4 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-            <div
-              className="bg-teal-600 dark:bg-teal-500 h-2.5 rounded-full transition-all duration-500 ease-out progress-bar"
-              style={{ width: `${progress.percent}%` }}
-            />
-          </div>
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">{progress.percent}%</p>
-        </div>
-      )}
-
-      {/* History Modal */}
-      {showHistory && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden scale-in">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <History className="h-6 w-6" />
-                Analysis History
-              </h2>
-              <button
-                onClick={() => setShowHistory(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+        <div ref={loadingRef} className="max-w-2xl mx-auto mb-8">
+          <Loading 
+            message={progress.stage} 
+            subMessage={progress.subMessage || null}
+            currentTask={progress.currentTask || null}
+            completedTasks={progress.completedTasks || []}
+            totalTasks={progress.totalTasks || 0}
+          />
+          <div className="mt-6 space-y-2">
+            <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden shadow-inner">
+              <div
+                className="bg-gradient-to-r from-teal-500 to-teal-600 dark:from-teal-600 dark:to-teal-500 h-3 rounded-full transition-all duration-500 ease-out relative"
+                style={{ width: `${progress.percent}%` }}
               >
-                <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              </button>
+                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+              </div>
             </div>
-
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)] scrollbar-thin">
-              {resultsHistory.length === 0 ? (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-8">No history yet</p>
-              ) : (
-                <div className="space-y-3">
-                  {[...resultsHistory].reverse().map((item, index) => (
-                    <button
-                      key={item.id}
-                      onClick={() => viewHistoryItem(item)}
-                      className="w-full text-left border border-gray-200 dark:border-gray-700
-                               rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50
-                               transition-all duration-200 hover-lift"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="inline-flex items-center justify-center w-6 h-6
-                                         rounded-full bg-teal-100 dark:bg-teal-900/30
-                                         text-teal-700 dark:text-teal-300 text-xs font-semibold">
-                              {resultsHistory.length - index}
-                            </span>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">
-                              Analysis #{resultsHistory.length - index}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3.5 w-3.5" />
-                              {new Date(item.timestamp).toLocaleString()}
-                            </span>
-                            <span>{item.textCount} text{item.textCount > 1 ? 's' : ''}</span>
-                          </div>
-                        </div>
-                        <div className="text-teal-600 dark:text-teal-400 text-sm font-medium">
-                          View →
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {resultsHistory.length > 0 && (
-                <button
-                  onClick={clearHistory}
-                  className="mt-6 w-full px-4 py-2 text-red-600 dark:text-red-400
-                           hover:bg-red-50 dark:hover:bg-red-900/20
-                           rounded-lg transition-colors text-sm font-medium"
-                >
-                  Clear All History
-                </button>
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{progress.percent}%</p>
+              {progress.totalTasks > 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {progress.completedTasks.length} / {progress.totalTasks} tasks completed
+                </p>
               )}
             </div>
           </div>
@@ -224,15 +572,11 @@ const AnalyzePage = () => {
                 {new Date(currentResults.timestamp).toLocaleString()}
               </span>
             </div>
-            <Dashboard analysisResults={currentResults.results} />
-          </div>
-
-          {/* Detailed Results */}
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
-              Detailed Results
-            </h2>
-            <ResultsDisplay results={currentResults.results} />
+            <Dashboard 
+              analysisResults={currentResults.results} 
+              timingData={currentResults.timing}
+              fileNames={currentResults.fileNames}
+            />
           </div>
         </div>
       )}

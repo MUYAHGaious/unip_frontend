@@ -147,16 +147,41 @@ api.interceptors.response.use(
 
 // Analysis functions
 export const analyzeTexts = async (texts, tasks = null) => {
+  const frontendStart = Date.now();
   const response = await api.post(API_ENDPOINTS.ANALYZE, {
     texts,
     tasks,
   });
+  const frontendEnd = Date.now();
+  
+  // Add frontend timing to response
+  if (response.data) {
+    response.data.frontend_timing = {
+      request_start: frontendStart,
+      request_end: frontendEnd,
+      total_duration: round((frontendEnd - frontendStart) / 1000, 3)
+    };
+  }
+  
   return response.data;
 };
 
-export const analyzeFile = async (file, tasks = null) => {
+const round = (num, decimals = 2) => {
+  return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+};
+
+export const analyzeFile = async (files, tasks = null) => {
+  const frontendStart = Date.now();
   const formData = new FormData();
-  formData.append('file', file);
+  
+  // Handle both single file and multiple files
+  const fileArray = Array.isArray(files) ? files : [files];
+  
+  // Append all files
+  fileArray.forEach((file) => {
+    formData.append('files', file);
+  });
+  
   if (tasks) {
     formData.append('tasks', tasks.join(','));
   }
@@ -166,6 +191,18 @@ export const analyzeFile = async (file, tasks = null) => {
       'Content-Type': 'multipart/form-data',
     },
   });
+  
+  const frontendEnd = Date.now();
+  
+  // Add frontend timing to response
+  if (response.data) {
+    response.data.frontend_timing = {
+      request_start: frontendStart,
+      request_end: frontendEnd,
+      total_duration: round((frontendEnd - frontendStart) / 1000, 3)
+    };
+  }
+  
   return response.data;
 };
 

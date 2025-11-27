@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FileText, BarChart3, Code } from 'lucide-react';
+import { FileText, BarChart3, Code, History } from 'lucide-react';
 import ThemeToggle from '../common/ThemeToggle';
+import { useHistory } from '../../context/HistoryContext';
 
 const Header = () => {
   const location = useLocation();
+  const { history } = useHistory();
 
   const isActive = (path) => location.pathname === path;
 
@@ -32,6 +34,23 @@ const Header = () => {
             >
               <BarChart3 className="h-4 w-4" />
               Analyze
+            </Link>
+
+            <Link
+              to="/history"
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ease-out relative ${
+                isActive('/history')
+                  ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <History className="h-4 w-4" />
+              History
+              {history.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-teal-600 dark:bg-teal-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                  {history.length}
+                </span>
+              )}
             </Link>
 
             <Link
