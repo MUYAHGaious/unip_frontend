@@ -8,7 +8,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 second timeout
+  timeout: 120000, // 120 second timeout (2 minutes) for NLP processing
 });
 
 // Request interceptor - Sanitize, validate, and log

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import router from './router';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import { ThemeProvider } from './context/ThemeContext';
 import { logger } from './utils/logger';
 import './styles/index.css';
 
@@ -15,9 +16,11 @@ logger.info('UNIP Application Starting', {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <RouterProvider router={router} />
-    </ErrorBoundary>
+    <ThemeProvider>
+      <ErrorBoundary>
+        <RouterProvider router={router} />
+      </ErrorBoundary>
+    </ThemeProvider>
   </React.StrictMode>
 );
 

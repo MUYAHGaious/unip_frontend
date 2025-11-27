@@ -1,0 +1,14 @@
+{
+  "dependencies_to_add": {
+    "recharts": "^2.10.0",
+    "chart.js": "^4.4.0",
+    "react-chartjs-2": "^5.2.0",
+    "@headlessui/react": "^1.7.17",
+    "@heroicons/react": "^2.1.1",
+    "framer-motion": "^10.16.16",
+    "react-hot-toast": "^2.4.1",
+    "recharts": "^2.10.3",
+    "lucide-react": "^0.294.0"
+  },
+  "note": "Install these for enhanced UI with charts and animations"
+}
